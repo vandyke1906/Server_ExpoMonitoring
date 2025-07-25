@@ -21,7 +21,7 @@ app.post("/sync", async (req, res) => {
     const reports = req.body.reports;
 
     for (const report of reports) {
-         console.error("Syncing:", report);
+         console.error("Syncing:", { report });
       await db.execute({
         sql: `
           INSERT INTO reports (
