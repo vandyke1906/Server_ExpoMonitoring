@@ -15,6 +15,11 @@ const db = createClient({
   authToken: process.env.TURSO_DB_TOKEN,
 });
 
+app.get("/", (req, res) => {
+  res.send("🟢 MANP Monitoring service API is live.");
+});
+
+
 app.post("/sync", async (req, res) => {
   console.info("Syncing...");
   try {
@@ -60,10 +65,38 @@ app.post("/sync", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("🟢 MANP Monitoring service API is live.");
-});
+app.get("/reports/:userId", async (req, res) => {
+  const { userId } = req.params;
+  console.info("Fetching user reports...");
+  try {
+    const result = await db.execute({
+      sql: `
+        SELECT 
+          id, user_id, denr_personnels, other_agency_personnels,
+          activity_date_start, activity_date_end, location,
+          persons_involved, complaint_description, action_taken,
+          recommendation, photos, synced, created_at
+        FROM reports
+        WHERE user_id = ?1
+        ORDER BY created_at DESC;
+      `,
+      args: [userId],
+    });
 
+    // Parse JSON fields before sending back to client
+    const reports = result.rows.map((row) => ({
+      ...row,
+      denr_personnels: JSON.parse(row.denr_personnels),
+      other_agency_personnels: row.other_agency_personnels ? JSON.parse(row.other_agency_personnels) : null,
+      photos: row.photos ? JSON.parse(row.photos) : null,
+    }));
+
+    res.status(200).json({ success: true, reports });
+  } catch (error) {
+    console.error("❌ Fetch reports error:", error);
+    res.status(500).json({ error: "Failed to fetch reports." });
+  }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
