@@ -36,7 +36,7 @@ app.post("/sync", async (req, res) => {
             report.recommendation,
             report.photos ? JSON.stringify(report.photos) : null, // array → string or null
             1, // integer
-            report..created_at
+            report.created_at
         ];
         await db.execute({
             sql: `
