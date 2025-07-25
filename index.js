@@ -25,7 +25,7 @@ app.post("/sync", async (req, res) => {
         const values = [
             report.id,
             report.user_id,
-            report.JSON.stringify(report.denr_personnels), // array → string
+            JSON.stringify(report.denr_personnels), // array → string
             report.other_agency_personnels ? JSON.stringify(report.other_agency_personnels) : null,
             report.activity_date_start,
             report.activity_date_end || null,
