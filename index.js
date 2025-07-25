@@ -30,7 +30,7 @@ app.post("/sync", async (req, res) => {
             persons_involved, complaint_description, action_taken,
             recommendation, photos, synced, created_at
           )
-          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 1, ?13)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 1, ?14)
           ON CONFLICT(id) DO NOTHING;
         `,
         args: [
