@@ -59,7 +59,7 @@ app.post("/sync", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("🟢 Turso Sync API is live.");
+  res.send("🟢 MANP Monitoring service API is live.");
 });
 
 const PORT = process.env.PORT || 3000;
