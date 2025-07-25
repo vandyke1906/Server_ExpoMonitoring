@@ -23,20 +23,20 @@ app.post("/sync", async (req, res) => {
     for (const report of reports) {
         console.error("Syncing:", { report });
         const values = [
-            id,
-            user_id,
-            JSON.stringify(denr_personnels), // array → string
-            other_agency_personnels ? JSON.stringify(other_agency_personnels) : null,
-            activity_date_start,
-            activity_date_end || null,
-            location,
-            persons_involved,
-            complaint_description,
-            action_taken,
-            recommendation,
-            photos ? JSON.stringify(photos) : null, // array → string or null
-            Number(synced), // integer
-            created_at
+            report.id,
+            report.user_id,
+            report.JSON.stringify(report.denr_personnels), // array → string
+            report.other_agency_personnels ? JSON.stringify(report.other_agency_personnels) : null,
+            report.activity_date_start,
+            report.activity_date_end || null,
+            report.location,
+            report.persons_involved,
+            report.complaint_description,
+            report.action_taken,
+            report.recommendation,
+            report.photos ? JSON.stringify(report.photos) : null, // array → string or null
+            1, // integer
+            report..created_at
         ];
         await db.execute({
             sql: `
@@ -46,7 +46,7 @@ app.post("/sync", async (req, res) => {
                 persons_involved, complaint_description, action_taken,
                 recommendation, photos, synced, created_at
             )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 1, ?13)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
             ON CONFLICT(id) DO NOTHING;
             `,
             args: values,
