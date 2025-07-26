@@ -26,34 +26,6 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR);
 }
 
-// 📷 Multer storage configuration
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     try {
-//       // Parse JSON to extract `user_id` and `created_at`
-//       const reportData = JSON.parse(req.body.report);
-//       const userId = reportData.user_id;
-//       const createdAt = new Date().toISOString();
-
-//       const folderName = `${userId}/${createdAt}`;
-//       const userFolderPath = path.join(UPLOAD_DIR, folderName);
-
-//       // Create nested folder if it doesn't exist
-//       fs.mkdirSync(userFolderPath, { recursive: true });
-
-//       cb(null, userFolderPath);
-//     } catch (err) {
-//       cb(err);
-//     }
-//   },
-
-//   filename: (req, file, cb) => {
-//     cb(null, `${Date.now()}-${file.originalname}`);
-//   }
-// });
-// export const upload = multer({ storage });
-
-
 // Parse JSON in text field
 app.use(cors());
 app.use(express.json());
