@@ -1,9 +1,13 @@
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
-const oauth2Client = new google.auth.OAuth2(
+const TOKEN_PATH = path.resolve('drive_token.json'); // Save token here
+
+export const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
   process.env.CLIENT_SECRET,
   process.env.REDIRECT_URI
@@ -19,4 +23,12 @@ export const getDriveClient = () => google.drive({ version: 'v3', auth: oauth2Cl
 export const setTokensFromCode = async (code) => {
   const { tokens } = await oauth2Client.getToken(code);
   oauth2Client.setCredentials(tokens);
+  fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
+};
+
+export const loadSavedCredentials = () => {
+  if (fs.existsSync(TOKEN_PATH)) {
+    const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
+    oauth2Client.setCredentials(tokens);
+  }
 };

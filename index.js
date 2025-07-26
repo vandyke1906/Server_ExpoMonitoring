@@ -7,11 +7,15 @@ import path  from "path";
 import fs  from "fs";
 import { fileURLToPath } from 'url';
 import { Readable } from 'stream';
-import { getAuthUrl, getDriveClient, setTokensFromCode } from "./auth.js";
-
-// Load env vars if running locally (optional)
+import { getAuthUrl, getDriveClient, loadSavedCredentials, oauth2Client, setTokensFromCode } from "./auth.js";
 import dotenv from "dotenv";
-dotenv.config();
+import open from 'open';
+
+
+dotenv.config();  // Load env vars if running locally (optional)
+
+loadSavedCredentials(); // Make sure credentials are loaded on boot
+
 
 const app = express();
 
@@ -214,6 +218,7 @@ app.post('/upload-report', uploadMiddleware, async (req, res) => {
           body: bufferStream,
         };
 
+        console.log('OAuth2 loaded credentials:', oauth2Client.credentials); //
         const driveResponse = await drive.files.create({
           resource: fileMetadata,
           media,
@@ -290,7 +295,7 @@ app.post('/upload-report', uploadMiddleware, async (req, res) => {
 
 app.get('/auth', (req, res) => {
   const url = getAuthUrl();
-  open(url);
+  if (process.env.NODE_ENV === 'development') open(url);
   res.send('Redirecting for authentication...');
 });
 
@@ -298,7 +303,6 @@ app.get('/oauth2callback', async (req, res) => {
   await setTokensFromCode(req.query.code);
   res.send('Authenticated successfully!');
 });
-
 
 
 const PORT = process.env.PORT || 3000;
