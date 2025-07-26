@@ -48,6 +48,12 @@ app.get("/", (req, res) => {
   res.send("🟢 MANP Monitoring service API is live.");
 });
 
+app.get('/ping', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
 
 app.post("/sync", async (req, res) => {
   console.info("Syncing...");
@@ -291,6 +297,29 @@ app.post('/upload-report', uploadMiddleware, async (req, res) => {
   }
 });
 
+app.delete("/report/:id", async (req, res) => {
+  const { id } = req.params;
+  console.info(`🗑️ Deleting report with ID: ${id}`);
+
+  try {
+    const result = await db.execute({
+      sql: `DELETE FROM reports WHERE id = ?1`,
+      args: [id],
+    });
+
+    // Optional: check affected rows
+    if (result.rowsAffected && result.rowsAffected > 0) {
+      res.status(200).json({ success: true, message: "Report deleted successfully." });
+    } else {
+      res.status(404).json({ success: false, message: "Report not found." });
+    }
+  } catch (error) {
+    console.error("❌ Delete report error:", error);
+    res.status(500).json({ success: false, message: "Failed to delete report." });
+  }
+});
+
+//####google
 
 app.get('/auth', (req, res) => {
   const url = getAuthUrl();
