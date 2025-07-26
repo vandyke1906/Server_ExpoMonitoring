@@ -6,7 +6,8 @@ import bodyParser  from "body-parser";
 import path  from "path";
 import fs  from "fs";
 import { fileURLToPath } from 'url';
-
+import { Readable } from 'stream';
+import { getAuthUrl, getDriveClient, setTokensFromCode } from "./auth.js";
 
 // Load env vars if running locally (optional)
 import dotenv from "dotenv";
@@ -157,11 +158,90 @@ app.post('/upload-report', uploadMiddleware, async (req, res) => {
       const filepath = path.join(targetDir, filename);
       fs.writeFileSync(filepath, file.buffer);
 
-      photoFiles.push({
-        filename,
-        path: filepath,
-        mimetype: file.mimetype
-      });
+      //NOTE:: add the code here for uploading the files to google drive with folder id of 11Z0_1epYPiEGCE5s3Yl6capE9eopQIR8
+
+      // ▶️ Convert buffer to ReadableStream for Drive upload
+      const bufferStream = new Readable();
+      bufferStream.push(file.buffer);
+      bufferStream.push(null);
+
+      // 📤 Upload to Google Drive
+      const drive = getDriveClient();
+      
+      // 1. Create or get user folder inside root
+      const findOrCreateFolder = async (folderName, parentId) => {
+        const searchRes = await drive.files.list({
+          q: `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and '${parentId}' in parents`,
+          fields: 'files(id, name)',
+        });
+
+        if (searchRes.data.files.length > 0) {
+          return searchRes.data.files[0].id;
+        }
+
+        const folderRes = await drive.files.create({
+          resource: {
+            name: folderName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parentId],
+          },
+          fields: 'id',
+        });
+
+        return folderRes.data.id;
+      };
+
+      try {
+        // 🗂️ Step 1: Get or create user's Drive folder under root
+        const userFolderId = await findOrCreateFolder(user_id, process.env.GOOGLE_DRIVE_MONITORING_FOLDER);
+
+        // 🗂️ Step 2: Get or create created_at timestamp folder inside user folder
+        const safeTimestamp = created_at.replace(/:/g, '-');
+        const timestampFolderId = await findOrCreateFolder(safeTimestamp, userFolderId);
+
+        // 📤 Step 3: Upload photo to Drive inside timestamp folder
+        const fileMetadata = {
+          name: filename,
+          parents: [timestampFolderId],
+        };
+
+        const bufferStream = new Readable();
+        bufferStream.push(file.buffer);
+        bufferStream.push(null);
+
+        const media = {
+          mimeType: file.mimetype,
+          body: bufferStream,
+        };
+
+        const driveResponse = await drive.files.create({
+          resource: fileMetadata,
+          media,
+          fields: 'id, webViewLink, name',
+        });
+
+        photoFiles.push({
+          filename,
+          path: filepath,
+          mimetype: file.mimetype,
+          drive_id: driveResponse.data.id,
+          drive_link: driveResponse.data.webViewLink,
+        });
+
+        console.info(`✅ Uploaded to Drive: ${filename} → ${driveResponse.data.webViewLink}`);
+      } catch (driveErr) {
+        console.error(`❌ Drive upload failed for ${filename}: ${driveErr.message}`);
+      }
+
+      // 📤 Upload to Google Drive
+
+      //NOTE:: add the code here for uploading the files to google drive with folder id of 11Z0_1epYPiEGCE5s3Yl6capE9eopQIR8
+
+      // photoFiles.push({
+      //   filename,
+      //   path: filepath,
+      //   mimetype: file.mimetype
+      // });
     }
     // Save uploaded files to nested folder in current server
 
@@ -206,6 +286,19 @@ app.post('/upload-report', uploadMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to process upload' });
   }
 });
+
+
+app.get('/auth', (req, res) => {
+  const url = getAuthUrl();
+  open(url);
+  res.send('Redirecting for authentication...');
+});
+
+app.get('/oauth2callback', async (req, res) => {
+  await setTokensFromCode(req.query.code);
+  res.send('Authenticated successfully!');
+});
+
 
 
 const PORT = process.env.PORT || 3000;
