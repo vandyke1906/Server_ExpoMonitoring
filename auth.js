@@ -13,6 +13,17 @@ export const oauth2Client = new google.auth.OAuth2(
   process.env.REDIRECT_URI
 );
 
+oauth2Client.on('tokens', (tokens) => {
+  if (tokens.refresh_token || tokens.access_token) {
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify({
+      ...oauth2Client.credentials,
+      refresh_token: oauth2Client.credentials.refresh_token || tokens.refresh_token
+    }));
+    console.log('🔁 OAuth2 token updated and saved.');
+  }
+});
+
+
 const scopes = ['https://www.googleapis.com/auth/drive.file'];
 
 export const getAuthUrl = () =>
