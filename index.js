@@ -218,7 +218,6 @@ app.post('/upload-report', uploadMiddleware, async (req, res) => {
           body: bufferStream,
         };
 
-        console.log('OAuth2 loaded credentials:', oauth2Client.credentials); //
         const driveResponse = await drive.files.create({
           resource: fileMetadata,
           media,
